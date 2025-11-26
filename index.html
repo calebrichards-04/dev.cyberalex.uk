@@ -2,10 +2,222 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Zilchy.link – Almost No Link</title>
+  <title>Zilchy.link – Almost no link</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Zilchy.link – tiny, hand-crafted short links. Almost no link." />
-  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --bg: #050608;
+      --card: #0c0f15;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #a0aec0;
+      --accent: #4c6fff;
+      --accent-soft: rgba(76, 111, 255, 0.16);
+      --radius-lg: 18px;
+      --shadow-soft: 0 18px 60px rgba(0, 0, 0, 0.6);
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body.page {
+      font-family: var(--font-sans);
+      background: radial-gradient(circle at 0% 0%, #15192a 0, #050608 50%, #020309 100%);
+      color: var(--text-main);
+    }
+
+    .page-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    /* Branding header */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .logo-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: radial-gradient(circle at 0% 0%, #8b9dff, #4c6fff 50%, #101320);
+      color: #f9fbff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), var(--shadow-soft);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      margin: 2px 0 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Main pill box */
+    .search-area,
+    .status {
+      background: linear-gradient(145deg, #0c1020, #090b12);
+      border-radius: var(--radius-lg);
+      padding: 22px 20px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .search-area {
+      margin-bottom: 18px;
+    }
+
+    /* Input */
+    #mainForm input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(2,3,6,0.95);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s, background .18s;
+    }
+
+    #mainForm input::placeholder {
+      color: rgba(160,174,192,0.85);
+    }
+
+    #mainForm input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: rgba(3,5,12,0.98);
+    }
+
+    /* Buttons */
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-primary {
+      flex: 0 0 auto;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(76, 111, 255, 0.45);
+      transition: transform .1s, box-shadow .1s, filter .1s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 32px rgba(76,111,255,0.6);
+      filter: brightness(1.05);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 18px rgba(76,111,255,0.5);
+    }
+
+    .hint {
+      margin: 12px 4px 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* Result panel */
+    #resultPanel {
+      margin-top: 24px;
+    }
+
+    .result-heading {
+      margin: 4px 0 8px;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .result-subheading {
+      margin: 18px 0 6px;
+      font-size: 0.95rem;
+    }
+
+    code {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.88rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      background: rgba(15,23,42,0.8);
+    }
+
+    .snippet {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(15,23,42,0.85);
+      border: 1px solid rgba(148,163,184,0.4);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.83rem;
+      overflow-x: auto;
+    }
+
+    .steps {
+      padding-left: 20px;
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+    }
+    .steps li { margin-bottom: 6px; }
+
+    /* Footer */
+    .footer {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+  </style>
+
 </head>
 <body class="page page-center">
   <main class="shell">
@@ -17,26 +229,65 @@
       </div>
     </header>
 
+    <!-- MAIN INPUT -->
     <section class="search-area">
-      <form id="lookupForm" autocomplete="off">
+      <form id="mainForm" autocomplete="off">
         <input
-          id="codeInput"
+          id="mainInput"
           type="text"
           inputmode="latin"
-          spellcheck="false"
-          placeholder="Enter your Zilchy code or URL (e.g. h24m or https://zilchy.link/h24m)"
-          aria-label="Enter a Zilchy short code or URL"
+          placeholder="Enter a 4-char code or paste a long URL"
         />
-      <div class="button-row">
-        <button type="submit" class="btn-primary">Go</button>
-      
-        <button type="button" class="btn-secondary" id="createBtn">
-          Create a new link
-        </button>
-      </div>
+
+        <div class="button-row">
+          <button type="submit" class="btn-primary" id="goBtn">Go</button>
+        </div>
       </form>
+
       <p class="hint">
-        Zilchy codes are 4 characters long &nbsp;·&nbsp; numbers and letters &nbsp;·&nbsp; not case sensitive
+        Zilchy codes are 4 characters · numbers + letters · not case sensitive
+      </p>
+    </section>
+
+
+    <!-- EXPANDING RESULT PANEL -->
+    <section id="resultPanel" class="status" hidden>
+      <h2 class="result-heading">Create a new Zilchy link</h2>
+
+      <p class="hint">
+        Long URL: <code id="longUrlDisplay"></code>
+      </p>
+
+      <p>
+        Code: <code id="codeOut"></code><br>
+        Short URL: <code id="shortOut"></code>
+      </p>
+
+      <p class="hint">
+        To make this live, add it to <code>urls.json</code> in the GitHub repository.
+      </p>
+
+      <h3 class="result-subheading">JSON entry to paste</h3>
+      <pre id="jsonSnippet" class="snippet"></pre>
+
+      <h3 class="result-subheading">Edit this file on GitHub</h3>
+      <p>
+        <a href="https://github.com/standardgitaccount/dev.cyberalex.uk/blob/main/urls.json" target="_blank">
+          https://github.com/standardgitaccount/dev.cyberalex.uk/blob/main/urls.json
+        </a>
+      </p>
+
+      <h3 class="result-subheading">How to submit a pull request</h3>
+      <ol class="steps">
+        <li>Fork the repository on GitHub.</li>
+        <li>Open <code>urls.json</code> and click **Edit**.</li>
+        <li>Paste the JSON line above into the object.</li>
+        <li>Commit with a message like <code>Add Zilchy code</code>.</li>
+        <li>Open a Pull Request.</li>
+      </ol>
+
+      <p class="hint">
+        Once merged, your Zilchy link will work instantly.
       </p>
     </section>
 
@@ -46,50 +297,87 @@
   </main>
 
   <script>
-    // Set year
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    const form = document.getElementById('lookupForm');
-    const input = document.getElementById('codeInput');
+    const form = document.getElementById('mainForm');
+    const input = document.getElementById('mainInput');
+    const goBtn = document.getElementById('goBtn');
+    const resultPanel = document.getElementById('resultPanel');
+    const longUrlDisplay = document.getElementById('longUrlDisplay');
+    const codeOut = document.getElementById('codeOut');
+    const shortOut = document.getElementById('shortOut');
+    const jsonSnippet = document.getElementById('jsonSnippet');
+    const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const raw = (input.value || '').trim();
-      if (!raw) return;
+    function randomCode() {
+      let out = '';
+      for (let i = 0; i < 4; i++)
+        out += alphabet[Math.floor(Math.random() * alphabet.length)];
+      return out;
+    }
 
-      // Accept either a full Zilchy URL or just the 4-char code
-      let code = raw;
+    async function loadUrlMap() {
+      const res = await fetch('/urls.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Cannot load urls.json');
+      return res.json();
+    }
+
+    async function generateUniqueCode(map) {
+      for (let i = 0; i < 10000; i++) {
+        const code = randomCode();
+        if (!map[code]) return code;
+      }
+      throw new Error('No free codes found');
+    }
+
+    function isCode(str) {
+      return /^[0-9a-zA-Z]{4}$/.test(str);
+    }
+
+    async function handleURL(raw) {
+      let url = raw.trim();
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+      try { new URL(url); }
+      catch { return alert('Invalid URL'); }
+
+      goBtn.disabled = true;
+      goBtn.textContent = 'Working…';
 
       try {
-        // If it's a URL, extract pathname segment after /
-        if (raw.startsWith('http://') || raw.startsWith('https://')) {
-          const u = new URL(raw);
-          const parts = u.pathname.replace(/^\/+/, '').split('/');
-          code = parts[0] || '';
-        } else if (raw.includes('/')) {
-          // Something like zilchy.link/h24m without protocol
-          const parts = raw.split('/');
-          code = parts[parts.length - 1];
-        }
-      } catch (err) {
-        // ignore, just treat as raw code
+        const map = await loadUrlMap();
+        const code = await generateUniqueCode(map);
+        const shortUrl = window.location.origin + '/' + code;
+
+        longUrlDisplay.textContent = url;
+        codeOut.textContent = code;
+        shortOut.textContent = shortUrl;
+        jsonSnippet.textContent = `"${code}": "${url}"`;
+
+        resultPanel.hidden = false;
+        resultPanel.scrollIntoView({ behavior: 'smooth' });
+      } catch (e) {
+        console.error(e);
+        alert('Error generating code.');
+      } finally {
+        goBtn.disabled = false;
+        goBtn.textContent = 'Go';
       }
+    }
 
-      code = code.toLowerCase().replace(/[^0-9a-z]/g, '');
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const raw = input.value.trim();
+      if (!raw) return;
 
-      if (!code || code.length !== 4) {
-        alert('Please enter a valid 4-character Zilchy code.');
+      if (isCode(raw)) {
+        window.location.href = '/' + raw.toLowerCase();
         return;
       }
 
-      // Navigate to the short URL; 404.html will do the redirect.
-      window.location.href = '/' + code;
+      await handleURL(raw);
     });
-
-      document.getElementById('createBtn').addEventListener('click', () => {
-    window.location.href = 'create.html';
-  });
-
   </script>
+
 </body>
 </html>
