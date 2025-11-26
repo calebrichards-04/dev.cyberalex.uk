@@ -337,172 +337,207 @@
     </footer>
   </main>
 
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-    const form = document.getElementById('mainForm');
-    const input = document.getElementById('mainInput');
-    const goBtn = document.getElementById('goBtn');
-    const resultPanel = document.getElementById('resultPanel');
+  const form = document.getElementById('mainForm');
+  const input = document.getElementById('mainInput');
+  const goBtn = document.getElementById('goBtn');
+  const resultPanel = document.getElementById('resultPanel');
 
-    const longUrlDisplay = document.getElementById('longUrlDisplay');
-    const codeOut = document.getElementById('codeOut');
-    const shortOut = document.getElementById('shortOut');
-    const jsonSnippet = document.getElementById('jsonSnippet');
+  const longUrlDisplay = document.getElementById('longUrlDisplay');
+  const codeOut = document.getElementById('codeOut');
+  const shortOut = document.getElementById('shortOut');
+  const jsonSnippet = document.getElementById('jsonSnippet');
 
-    const customCodeInput = document.getElementById('customCode');
-    const customCodeHint = document.getElementById('customCodeHint');
+  const customCodeInput = document.getElementById('customCode');
+  const customCodeHint = document.getElementById('customCodeHint');
 
-    const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
 
-    let urlMap = null;
-    let lastGeneratedCode = null;
-    let lastUrl = null;
+  let urlMap = null;
+  let lastGeneratedCode = null;
+  let lastUrl = null;
 
-    function randomCode() {
-      let out = '';
-      for (let i = 0; i < 4; i++) {
-        out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  function randomCode() {
+    let out = '';
+    for (let i = 0; i < 4; i++) {
+      out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    return out;
+  }
+
+  // Robust loader: tries urls.json and /urls.json, with proper error logging
+  async function loadUrlMap() {
+    if (urlMap) return urlMap;
+
+    const candidates = ['urls.json', '/urls.json'];
+    let lastErr = null;
+
+    for (const path of candidates) {
+      try {
+        const res = await fetch(path, { cache: 'no-store' });
+        if (!res.ok) {
+          lastErr = new Error(`HTTP ${res.status} when fetching ${path}`);
+          continue;
+        }
+        const data = await res.json();
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+          lastErr = new Error(`${path} is not a JSON object`);
+          continue;
+        }
+        console.log('Loaded urls.json from', path);
+        urlMap = data;
+        return urlMap;
+      } catch (e) {
+        lastErr = e;
       }
-      return out;
     }
 
-    async function loadUrlMap() {
-      if (urlMap) return urlMap;
-      const res = await fetch('/urls.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Cannot load urls.json');
-      urlMap = await res.json();
-      return urlMap;
+    console.error('Failed to load urls.json', lastErr);
+    throw lastErr || new Error('Failed to load urls.json');
+  }
+
+  function looksLikeUrl(str) {
+    const s = str.trim();
+    if (/^https?:\/\//i.test(s)) return true;
+    if (s.includes(' ')) return false;
+    return s.includes('.');
+  }
+
+  function normalizeCode(raw) {
+    return raw.toLowerCase().replace(/[^0-9a-z]/g, '');
+  }
+
+  function updateOutputs(code, url) {
+    const shortUrl = window.location.origin.replace(/\/+$/, '') + '/' + code;
+    codeOut.textContent = code;
+    shortOut.textContent = shortUrl;
+    jsonSnippet.textContent = `"${code}": "${url}"`;
+  }
+
+  function clearCustomError() {
+    customCodeHint.classList.remove('error');
+    customCodeHint.textContent =
+      'Letters and numbers only · case insensitive · must not already be in use.';
+    customCodeInput.removeAttribute('aria-invalid');
+  }
+
+  function setCustomError(msg) {
+    customCodeHint.classList.add('error');
+    customCodeHint.textContent = msg;
+    customCodeInput.setAttribute('aria-invalid', 'true');
+  }
+
+  async function applyCustomFromField() {
+    if (!lastUrl) return;
+
+    let raw = customCodeInput.value.trim();
+    if (!raw) {
+      clearCustomError();
+      updateOutputs(lastGeneratedCode, lastUrl);
+      return;
     }
 
-    function looksLikeUrl(str) {
-      const s = str.trim();
-      if (/^https?:\/\//i.test(s)) return true;
-      if (s.includes(' ')) return false;
-      return s.includes('.');
+    const cleaned = normalizeCode(raw);
+    if (!cleaned) {
+      setCustomError('Please use only letters and numbers.');
+      return;
     }
 
-    function updateOutputs(code, url) {
-      const shortUrl = window.location.origin.replace(/\/+$/, '') + '/' + code;
-      codeOut.textContent = code;
-      shortOut.textContent = shortUrl;
-      jsonSnippet.textContent = `"${code}": "${url}"`;
+    if (cleaned.length > 64) {
+      setCustomError('That code is a bit too long. Please keep it under 64 characters.');
+      return;
     }
 
-    function normalizeCode(raw) {
-      return raw.toLowerCase().replace(/[^0-9a-z]/g, '');
-    }
-
-    function clearCustomError() {
-      customCodeHint.classList.remove('error');
-      customCodeHint.textContent = 'Letters and numbers only · case insensitive · must not already be in use.';
-      customCodeInput.removeAttribute('aria-invalid');
-    }
-
-    function setCustomError(msg) {
-      customCodeHint.classList.add('error');
-      customCodeHint.textContent = msg;
-      customCodeInput.setAttribute('aria-invalid', 'true');
-    }
-
-    async function applyCustomFromField() {
-      if (!lastUrl) return;
-
+    try {
       const map = await loadUrlMap();
-
-      let raw = customCodeInput.value.trim();
-      if (!raw) {
-        // fall back to generated code
-        clearCustomError();
-        updateOutputs(lastGeneratedCode, lastUrl);
-        return;
-      }
-
-      const cleaned = normalizeCode(raw);
-      if (!cleaned) {
-        setCustomError('Please use only letters and numbers.');
-        return;
-      }
-
-      if (cleaned.length > 64) {
-        setCustomError('That code is a bit too long. Please keep it under 64 characters.');
-        return;
-      }
-
       if (Object.prototype.hasOwnProperty.call(map, cleaned)) {
         setCustomError('That code is already in use. Please choose another.');
         return;
       }
-
-      clearCustomError();
-      updateOutputs(cleaned, lastUrl);
+    } catch (e) {
+      console.error('Error checking custom code against urls.json', e);
+      setCustomError('Could not verify this code against urls.json. Please try again later.');
+      return;
     }
 
-    async function handleURL(raw) {
-      let url = raw.trim();
-      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    clearCustomError();
+    updateOutputs(cleaned, lastUrl);
+  }
 
-      try {
-        new URL(url);
-      } catch (e) {
-        alert('That does not look like a valid URL.');
+  async function handleURL(raw) {
+    let url = raw.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    try {
+      new URL(url);
+    } catch (e) {
+      alert('That does not look like a valid URL.');
+      return;
+    }
+
+    goBtn.disabled = true;
+    goBtn.textContent = 'Working…';
+
+    try {
+      const map = await loadUrlMap();
+      // generate a random unused code
+      let code = null;
+      for (let i = 0; i < 10000; i++) {
+        const c = randomCode();
+        if (!Object.prototype.hasOwnProperty.call(map, c)) {
+          code = c;
+          break;
+        }
+      }
+      if (!code) {
+        throw new Error('Could not find a free code.');
+      }
+
+      lastGeneratedCode = code;
+      lastUrl = url;
+
+      longUrlDisplay.textContent = url;
+      customCodeInput.value = code;
+      clearCustomError();
+      updateOutputs(code, url);
+
+      resultPanel.hidden = false;
+      resultPanel.scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      console.error('Error generating code in handleURL:', e);
+      alert(
+        'Error generating code. This usually means urls.json could not be loaded or is invalid.\n' +
+        'Please check that urls.json exists at the site root and is valid JSON, then try again.'
+      );
+    } finally {
+      goBtn.disabled = false;
+      goBtn.textContent = 'Go';
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const raw = (input.value || '').trim();
+    if (!raw) return;
+
+    if (looksLikeUrl(raw)) {
+      await handleURL(raw);
+    } else {
+      const code = normalizeCode(raw);
+      if (!code) {
+        alert('Please use only letters and numbers in codes.');
         return;
       }
-
-      goBtn.disabled = true;
-      goBtn.textContent = 'Working…';
-
-      try {
-        const map = await loadUrlMap();
-        const code = await (async () => {
-          for (let i = 0; i < 10000; i++) {
-            const c = randomCode();
-            if (!Object.prototype.hasOwnProperty.call(map, c)) return c;
-          }
-          throw new Error('No free codes found');
-        })();
-
-        lastGeneratedCode = code;
-        lastUrl = url;
-
-        longUrlDisplay.textContent = url;
-        customCodeInput.value = code;
-        clearCustomError();
-        updateOutputs(code, url);
-
-        resultPanel.hidden = false;
-        resultPanel.scrollIntoView({ behavior: 'smooth' });
-      } catch (e) {
-        console.error(e);
-        alert('Error generating code. Please try again later.');
-      } finally {
-        goBtn.disabled = false;
-        goBtn.textContent = 'Go';
-      }
+      window.location.href = '/' + code;
     }
+  });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const raw = (input.value || '').trim();
-      if (!raw) return;
+  customCodeInput.addEventListener('input', () => {
+    applyCustomFromField();
+  });
+</script>
 
-      if (looksLikeUrl(raw)) {
-        await handleURL(raw);
-      } else {
-        // treat as code
-        const code = normalizeCode(raw);
-        if (!code) {
-          alert('Please use only letters and numbers in codes.');
-          return;
-        }
-        window.location.href = '/' + code;
-      }
-    });
-
-    customCodeInput.addEventListener('input', () => {
-      // fire and forget; validation handles errors
-      applyCustomFromField();
-    });
-  </script>
 </body>
 </html>
