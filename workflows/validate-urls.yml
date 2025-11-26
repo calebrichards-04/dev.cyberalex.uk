@@ -20,5 +20,6 @@ jobs:
         with:
           python-version: '3.x'
 
+
       - name: Run URL validation
         run: python .github/scripts/check_urls.py
