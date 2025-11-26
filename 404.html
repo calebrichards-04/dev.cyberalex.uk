@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Zilchy.link – Redirecting…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="page page-center">
+  <main class="shell">
+    <header class="brand">
+      <div class="logo-circle">Z</div>
+      <div>
+        <h1>Zilchy.link</h1>
+        <p class="tagline">Almost no link.</p>
+      </div>
+    </header>
+
+    <section id="status" class="status">
+      <p>Working out where <code id="codeDisplay"></code> should go…</p>
+    </section>
+
+    <footer class="footer">
+      <small>If this takes too long, go back to the <a href="/">homepage</a>.</small>
+    </footer>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const codeDisplay = document.getElementById('codeDisplay');
+
+    // Extract code from /something
+    const path = window.location.pathname.replace(/^\/+/, '');
+    const codeRaw = (path.split('/')[0] || '').trim();
+    const code = codeRaw.toLowerCase().replace(/[^0-9a-z]/g, '');
+
+    codeDisplay.textContent = code || '(no code)';
+
+    if (!code || code.length !== 4) {
+      statusEl.innerHTML = `
+        <p>Hmm… that doesn't look like a valid Zilchy code.</p>
+        <p>Codes are 4 characters long and use numbers and letters only.</p>
+        <p><a href="/">Try again on the homepage</a>.</p>
+      `;
+    } else {
+      // Look up in urls.json
+      fetch('/urls.json', { cache: 'no-store' })
+        .then(r => {
+          if (!r.ok) throw new Error('Failed to load URL map');
+          return r.json();
+        })
+        .then(map => {
+          const target = map[code];
+          if (target) {
+            statusEl.innerHTML = `<p>Found it! Redirecting you to <code>${target}</code>…</p>`;
+            // Use replace so Zilchy link doesn't stay in history
+            window.location.replace(target);
+          } else {
+            statusEl.innerHTML = `
+              <p>We couldn't find a link for <code>${code}</code>.</p>
+              <p>It may have expired or never existed.</p>
+              <p><a href="/">Go back to the homepage</a>.</p>
+            `;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          statusEl.innerHTML = `
+            <p>Something went wrong while looking up this code.</p>
+            <p>Please <a href="/">try again from the homepage</a>.</p>
+          `;
+        });
+    }
+  </script>
+</body>
+</html>
